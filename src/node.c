@@ -35,7 +35,7 @@ void tcp_server_create(const char *ip, const char *port) {
     }
     fd_add(tcp_server_fd);
 
-    printf("[INFO]: TCP server created successfully\n");
+    printf("[INFO]: TCP server created (%d) %s %s\n", tcp_server_fd, ip, port);
 }
 
 void tcp_server_close() {
@@ -53,6 +53,7 @@ TcpConnection tcp_connection_create(const char *ip, const char *port) {
         exit(1);
     }
 
+    fd_add(new.fd);
     new.addr.sin_family = AF_INET;
     new.addr.sin_port = htons(atoi(port));
     new.addr.sin_addr.s_addr = inet_addr(ip);
@@ -62,7 +63,6 @@ TcpConnection tcp_connection_create(const char *ip, const char *port) {
         perror("[ERROR]: Unable to connect to TCP server");
         exit(1);
     }
-    fd_add(new.fd);
     new.active = true;
 
     printf("[INFO]: TCP connection %s %s \n", ip, port);

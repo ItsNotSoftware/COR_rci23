@@ -45,12 +45,12 @@ int main(int argc, char **argv) {
     process_argv(argc, argv);
     server = server_connect();
 
-    // Servcer to accept new connections
-    tcp_server_create(master_node.self.ip, master_node.self.port);
-
     // Adding fd's
     fd_handler_init();
     fd_add(STDIN_FILENO);
+
+    // Servcer to accept new connections
+    tcp_server_create(master_node.self.ip, master_node.self.port);
 
     while (true) {
         printf("Enter command: ");
