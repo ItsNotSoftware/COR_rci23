@@ -56,6 +56,7 @@ void command_join(int ring, int id) {
     answer = server_receive_msg(&server);
     printf("Server:\n%s\n", answer);
 
+    master_node.self.id = id;
     if (i == -1)  // No nodes in ring
     {
         master_node.prev = master_node.self;

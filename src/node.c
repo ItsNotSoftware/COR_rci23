@@ -105,7 +105,8 @@ void tcp_receive_msg(TcpConnection *conn, char *msg) {
     int n, total_bytes_recieved = 0;
 
     while (1) {
-        n = read(conn->fd, msg, sizeof(STR_SIZE));
+        n = read(conn->fd, msg, STR_SIZE);
+        printf("n: %d\n", n);
 
         if (n == 0) {
             printf("[INFO]: Connection closed by node\n");
