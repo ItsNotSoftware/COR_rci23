@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "headers.h": "c",
+        "stdio.h": "c",
+        "in.h": "c",
+        "stdlib.h": "c",
+        "types.h": "c",
+        "server.h": "c",
+        "stdbool.h": "c",
+        "fd_handler.h": "c"
+    }
+}
