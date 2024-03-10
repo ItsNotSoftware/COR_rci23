@@ -58,13 +58,11 @@ int main(int argc, char **argv) {
 
         fd_handler_select();
         for (int i = 0; i <= get_max_fd(); i++) {
-            printf("i: %d, ", i);
             if (fd_is_set(i)) {
-                printf("fd: %d\n", i);
                 if (fd_is_user_cmd(i)) {
                     read_console();
                 } else if (fd_is_new_connection(i)) {
-                    printf("New connection\n");
+                    printf("[INFO]: New connection\n");
                     recieve_node();
                 } else  // A Node is sending message
                 {
@@ -76,13 +74,7 @@ int main(int argc, char **argv) {
                     }
 
                     tcp_receive_msg(&node->tcp, msg);
-                    printf("Message from %s: %s\n", node->ip, msg);
-
-                    int id, ip1, ip2, ip3, ip4, port;
-                    sscanf(msg, "SUCC %d %d.%d.%d.%d %d", &id, &ip1, &ip2, &ip3, &ip4, &port);
-                    master_node.second_next.id = id;
-                    sprintf(master_node.second_next.ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
-                    sprintf(master_node.second_next.port, "%d", port);
+                    process_node_msg(node, msg);
                 }
             }
         }

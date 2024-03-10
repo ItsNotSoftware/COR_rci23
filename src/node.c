@@ -5,13 +5,23 @@
 extern MasterNode master_node;
 int tcp_server_fd;
 
+int string_to_args(char *str, char args[5][STR_SIZE]) {
+    int n_args = 0;
+    char *token = strtok(str, " ");
+    while (token != NULL) {
+        strcpy(args[n_args++], token);
+        token = strtok(NULL, " ");
+    }
+
+    return n_args;
+}
+
 void tcp_server_create(const char *ip, const char *port) {
     TcpConnection *server = &master_node.self.tcp;
     int errcode;
 
     server->fd = socket(AF_INET, SOCK_STREAM, 0);
     tcp_server_fd = server->fd;
-    printf("tcp_server_fd: %d\n", tcp_server_fd);
 
     if (tcp_server_fd < 0) {
         perror("[ERROR]: Unable to create TCP server");
@@ -34,14 +44,9 @@ void tcp_server_create(const char *ip, const char *port) {
         exit(1);
     }
     fd_add(tcp_server_fd);
-
-    printf("[INFO]: TCP server created (%d) %s %s\n", tcp_server_fd, ip, port);
 }
 
-void tcp_server_close() {
-    close(tcp_server_fd);
-    printf("[INFO]: TCP server closed successfully\n");
-}
+void tcp_server_close() { close(tcp_server_fd); }
 
 TcpConnection tcp_connection_create(const char *ip, const char *port) {
     int errcode;
@@ -65,8 +70,6 @@ TcpConnection tcp_connection_create(const char *ip, const char *port) {
     }
     new.active = true;
 
-    printf("[INFO]: TCP connection %s %s \n", ip, port);
-
     return new;
 }
 
@@ -80,11 +83,11 @@ void tcp_connection_accept(TcpConnection *conn) {
 
     fd_add(conn->fd);
     conn->active = true;
-
-    printf("[INFO]: TCP connection accepted successfully\n");
 }
 
 void tcp_send_msg(TcpConnection *conn, char *msg) {
+    printf("[Sending]: %s\n", msg);
+
     int n = 0;
     int nleft = strlen(msg);
     msg[nleft++] = '\n';
@@ -106,7 +109,6 @@ void tcp_receive_msg(TcpConnection *conn, char *msg) {
 
     while (1) {
         n = read(conn->fd, msg, STR_SIZE);
-        printf("n: %d\n", n);
 
         if (n == 0) {
             printf("[INFO]: Connection closed by node\n");
@@ -123,6 +125,8 @@ void tcp_receive_msg(TcpConnection *conn, char *msg) {
 
         if (msg[total_bytes_recieved - 1] == '\n') {
             msg[total_bytes_recieved - 1] = '\0';
+
+            printf("[Recieved]: %s\n", msg);
             return;
         }
     }
@@ -140,35 +144,67 @@ void connect_to_node(int id, char *ip, char *port) {
     sprintf(msg, "ENTRY %02d %s %s", master_node.self.id, master_node.self.ip,
             master_node.self.port);
     tcp_send_msg(&next->tcp, msg);
-    printf("Sent: %s\n", msg);
+
+    // Make node my successor
+    master_node.next.id = id;
+    strcpy(master_node.next.ip, ip);
+    strcpy(master_node.next.port, port);
+    master_node.next.tcp.active = true;
+
+    // Make node my predecessor
+    master_node.prev.id = id;
+    strcpy(master_node.prev.ip, ip);
+    strcpy(master_node.prev.port, port);
+    master_node.prev.tcp.active = true;
 }
 
 void recieve_node() {
     char msg[STR_SIZE] = {0};
+    char args[5][STR_SIZE] = {0};
+
     Node *prev = &master_node.prev;
     Node *next = &master_node.next;
 
     tcp_connection_accept(&prev->tcp);
     tcp_receive_msg(&prev->tcp, msg);
-    printf("Recieved: %s\n", msg);
+    string_to_args(msg, args);
 
-    int id, ip1, ip2, ip3, ip4, port;
-    sscanf(msg, "ENTRY %02d %d.%d.%d.%d %d", &id, &ip1, &ip2, &ip3, &ip4, &port);
+    if (strcmp(args[0], "ENTRY") == 0) {
+        sprintf(msg, "SUCC %02d %s %s", next->id, next->ip, next->port);
+        tcp_send_msg(&prev->tcp, msg);
 
-    prev->id = id;
-    sprintf(prev->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
-    sprintf(prev->port, "%d", port);
-    prev->tcp.active = true;
+        if (prev->id != master_node.self.id) {
+            tcp_send_msg(&next->tcp, msg);
+        }
 
-    printf("[INFO]: Node %d connected\n", prev->id);
+        // Update new connection to successor if this node was alone in the net
+        if (next->id == master_node.self.id) {
+            next->id = atoi(args[1]);
+            strcpy(next->ip, args[2]);
+            strcpy(next->port, args[3]);
+            next->tcp.active = true;
+        }
 
-    sprintf(msg, "SUCC %02d %s %s", next->id, next->ip, next->port);
-    tcp_send_msg(&prev->tcp, msg);
+        prev->id = atoi(args[1]);
+        strcpy(prev->ip, args[2]);
+        strcpy(prev->port, args[3]);
+        prev->tcp.active = true;
+    } else if (strcmp(args[0], "PRED") == 0) {
+        prev->id = atoi(args[1]);
+        strcpy(prev->ip, " ");
+        strcpy(prev->port, " ");
+        prev->tcp.active = true;
+    }
+}
 
-    // TODO: implement complete logic
-    next->id = id;
-    next->tcp = prev->tcp;
-    strcpy(next->ip, prev->ip);
-    strcpy(next->port, prev->port);
-    next->tcp.active = true;
+void process_node_msg(Node *sender, char *msg) {
+    char args[4][STR_SIZE] = {0};
+    string_to_args(msg, args);
+
+    if (strcmp(args[0], "SUCC")) {
+        printf("[INFO]: New successor\n");
+        master_node.second_next.id = atoi(args[1]);
+        strcpy(master_node.second_next.ip, args[2]);
+        strcpy(master_node.second_next.port, args[3]);
+    }
 }

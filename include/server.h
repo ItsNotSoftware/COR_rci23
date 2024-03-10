@@ -17,6 +17,6 @@ typedef struct {
 ServerInfo server_connect();
 void server_send_msg(ServerInfo *info, const char *msg);
 char *server_receive_msg(ServerInfo *info);
-// void server_disconnect();
+void server_disconnect(ServerInfo *info);
 
 #endif
