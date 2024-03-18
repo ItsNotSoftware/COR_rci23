@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
     tcp_server_create(master_node.self.ip, master_node.self.port);
 
     while (true) {
-        printf("\nEnter command: ");
+        printf("Enter command: ");
         fflush(stdout);
 
         fd_handler_select();
@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
                 if (fd_is_user_cmd(i)) {
                     read_console();
                 } else if (fd_is_new_connection(i)) {
-                    printf("[INFO]: New connection\n");
+                    INFO("New connection");
                     recieve_node();
                 } else  // A Node is sending message
                 {

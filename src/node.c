@@ -86,7 +86,7 @@ void tcp_connection_accept(TcpConnection *conn) {
 }
 
 void tcp_send_msg(TcpConnection *conn, char *msg) {
-    printf("\t[Sending]: %s\n", msg);
+    printf("\n\t[Sending]: %s\n", msg);
 
     int n = 0;
     int nleft = strlen(msg);
@@ -126,7 +126,7 @@ void tcp_receive_msg(TcpConnection *conn, char *msg) {
         if (msg[total_bytes_recieved - 1] == '\n') {
             msg[total_bytes_recieved - 1] = '\0';
 
-            printf("\t[Recieved]: %s\n", msg);
+            printf("\n\t[Recieved]: %s\n", msg);
             return;
         }
     }
@@ -193,7 +193,6 @@ void recieve_node() {
         // Update new node secomd sucessor
         if (!node_alone) {
             sprintf(msg, "SUCC %02d %s %s", next->id, next->ip, next->port);
-            DEBUG2("send >>>", msg);
             tcp_send_msg(&prev->tcp, msg);
         }
 
@@ -245,14 +244,11 @@ void process_node_msg(Node *sender, char *msg) {
             strcpy(master_node.second_next.port, args[3]);
 
         } else if (strcmp(args[0], "PRED") == 0) {
-            DEBUG("Updating predecessor");
-
             master_node.prev.id = atoi(args[1]);
             strcpy(master_node.prev.ip, "_");
             strcpy(master_node.prev.port, "_");
 
         } else if (strcmp(args[0], "ENTRY") == 0) {
-            DEBUG("Recived Entry");
             connect_to_node(atoi(args[1]), args[2], args[3]);
 
             // Inform new node of me

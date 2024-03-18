@@ -32,12 +32,11 @@ void command_join(int ring, int id) {
 
     // Check if id is available
     bool id_not_available[100] = {0};
-    int i = -1, cid, ip1, ip2, ip3, ip4, port;
+    int i = -1, ip1, ip2, ip3, ip4, port;
 
     while ((token = strtok(NULL, "\n")) != NULL) {
         // Extract the first number of squence
         if (sscanf(token, "%d %d.%d.%d.%d %d", &i, &ip1, &ip2, &ip3, &ip4, &port) == 6) {
-            cid = i;
             id_not_available[i] = true;
         }
     }
@@ -68,7 +67,7 @@ void command_join(int ring, int id) {
     master_node.next.tcp.active = false;
     master_node.second_next.tcp.active = false;
 
-    if (i -= -1)  // Nodes in ring
+    if (i != -1)  // Nodes in ring
     {
         char new_ip[STR_SIZE] = {0};
         char new_port[STR_SIZE] = {0};
@@ -76,7 +75,7 @@ void command_join(int ring, int id) {
         sprintf(new_ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
         sprintf(new_port, "%d", port);
 
-        connect_to_node(cid, new_ip, new_port);
+        connect_to_node(i, new_ip, new_port);
     }
 }
 
