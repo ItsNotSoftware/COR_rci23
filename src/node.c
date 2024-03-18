@@ -115,7 +115,7 @@ void tcp_receive_msg(TcpConnection *conn, char *msg) {
             conn->active = false;
             fd_remove(conn->fd);
             close(conn->fd);
-            break;
+            return;
         } else if (n < 0) {
             ERROR("Unable to read from socket");
             exit(1);
@@ -190,10 +190,12 @@ void recieve_node() {
         strcpy(prev->port, args[3]);
         prev->tcp.active = true;
 
-        // Send my successor to new node
-        sprintf(msg, "SUCC %02d %s %s", next->id, next->ip, next->port);
-        DEBUG2("send >", msg);
-        tcp_send_msg(&prev->tcp, msg);
+        // Update new node secomd sucessor
+        if (!node_alone) {
+            sprintf(msg, "SUCC %02d %s %s", next->id, next->ip, next->port);
+            DEBUG2("send >>>", msg);
+            tcp_send_msg(&prev->tcp, msg);
+        }
 
         // Update Succ to new node if this node was alone in the net
         if (node_alone) {
@@ -217,15 +219,21 @@ void recieve_node() {
 
 void process_node_msg(Node *sender, char *msg) {
     char args[4][STR_SIZE] = {0};  // msg1
+    char *msg1 = NULL, *msg2 = NULL;
 
     // Split message if 2 messages come together
     char *divider = strchr(msg, '\n');
-    *divider = '\0';
-    char *msg1 = msg;
-    char *msg2 = divider + 1;
+
+    if (divider != NULL) {
+        *divider = '\0';
+        msg2 = divider + 1;
+    }
+    msg1 = msg;
 
     // Process one message at a time
     for (msg = msg1; msg != msg2; msg = msg2) {
+        if (msg == NULL) return;  // No message to process
+
         int n_args = string_to_args(msg, args);
         if (n_args == 0) return;
 
@@ -240,8 +248,8 @@ void process_node_msg(Node *sender, char *msg) {
             DEBUG("Updating predecessor");
 
             master_node.prev.id = atoi(args[1]);
-            strcpy(master_node.prev.ip, "");
-            strcpy(master_node.prev.port, "");
+            strcpy(master_node.prev.ip, "_");
+            strcpy(master_node.prev.port, "_");
 
         } else if (strcmp(args[0], "ENTRY") == 0) {
             DEBUG("Recived Entry");
