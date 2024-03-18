@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
     tcp_server_create(master_node.self.ip, master_node.self.port);
 
     while (true) {
-        printf("Enter command: ");
+        printf("\nEnter command: ");
         fflush(stdout);
 
         fd_handler_select();
@@ -70,6 +70,7 @@ int main(int argc, char **argv) {
 
                     Node *node = fd_to_node(i);
                     if (node == NULL) {
+                        WARNING("Invalid file descriptor");
                         continue;
                     }
 
