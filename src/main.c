@@ -4,7 +4,7 @@
 #include "server.h"
 #include "ui.h"
 
-MasterNode master_node;
+MasterNode master_node = {0};
 ServerInfo server;
 
 char reg_ip[STR_SIZE];

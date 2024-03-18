@@ -5,8 +5,7 @@
 
 #define MSG_LEN 515
 
-typedef struct
-{
+typedef struct {
     int fd;
     socklen_t addrlen;
     struct sockaddr_in addr;
@@ -14,8 +13,7 @@ typedef struct
     bool active;
 } TcpConnection;
 
-typedef struct
-{
+typedef struct {
     int id;
     char ip[STR_SIZE];
     char port[STR_SIZE];
@@ -23,8 +21,7 @@ typedef struct
     TcpConnection tcp;
 } Node;
 
-typedef struct
-{
+typedef struct {
     int ring;
 
     Node self;
@@ -37,7 +34,7 @@ typedef struct
 
 TcpConnection tcp_connection_create(const char *ip, const char *port);
 void tcp_server_create(const char *ip, const char *port);
-void connect_to_node(int id, char *ip, char *port);
+void connect_to_node(int id, char *ip, char *port, bool is_join);
 void tcp_receive_msg(TcpConnection *conn, char *msg);
 void tcp_server_close();
 void recieve_node();

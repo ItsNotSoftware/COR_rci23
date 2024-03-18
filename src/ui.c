@@ -75,7 +75,7 @@ void command_join(int ring, int id) {
         sprintf(new_ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
         sprintf(new_port, "%d", port);
 
-        connect_to_node(i, new_ip, new_port);
+        connect_to_node(i, new_ip, new_port, true);
     }
 }
 
