@@ -254,6 +254,8 @@ void process_node_msg(Node *sender, char *msg) {
             strcpy(master_node.prev.port, "_");
 
         } else if (strcmp(args[0], "ENTRY") == 0) {
+            TcpConnection prev_backup = master_node.prev.tcp;
+
             connect_to_node(atoi(args[1]), args[2], args[3], false);
 
             // Inform new node of me
@@ -263,7 +265,7 @@ void process_node_msg(Node *sender, char *msg) {
             // Inform predecessor of new node
             sprintf(msg, "SUCC %02d %s %s", master_node.next.id, master_node.next.ip,
                     master_node.next.port);
-            tcp_send_msg(&master_node.prev.tcp, msg);
+            tcp_send_msg(&prev_backup, msg);
         }
     }
 }
