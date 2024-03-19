@@ -161,11 +161,10 @@ void connect_to_node(int id, char *ip, char *port, bool is_join) {
 
         // Make node my predecessor
         master_node.prev = master_node.next;
+    } else {
+        sprintf(msg, "PRED %02d", master_node.self.id);
+        tcp_send_msg(&next->tcp, msg);
     }
-    // else {
-    //     sprintf(msg, "PRED %02d", master_node.self.id);
-    //     tcp_send_msg(&next->tcp, msg);
-    // }
 }
 
 void recieve_node() {
@@ -210,15 +209,6 @@ void recieve_node() {
             tcp_send_msg(&prev->tcp, msg);
         }
 
-        // // Update Succ to new node if this node was alone in the net
-        // if (node_alone) {
-        //     *next = *prev;
-
-        //     // update new node predecessor to myself
-        //     sprintf(msg, "PRED %02d %s %s", master_node.self.id, master_node.self.ip,
-        //             master_node.self.port);
-        //     tcp_send_msg(&next->tcp, msg);
-        // }
     } else if (strcmp(args[0], "PRED") == 0) {
         // Close previous connection
         if (prev->id != master_node.self.id && prev->id != next->id) {
@@ -273,8 +263,8 @@ void process_node_msg(Node *sender, char *msg) {
             master_node.second_next = next_backup;
 
             // Inform new node of me
-            sprintf(msg, "PRED %02d", master_node.self.id);
-            tcp_send_msg(&master_node.next.tcp, msg);
+            // sprintf(msg, "PRED %02d", master_node.self.id);
+            // tcp_send_msg(&master_node.next.tcp, msg);
 
             // Inform predecessor of new node
             sprintf(msg, "SUCC %02d %s %s", master_node.next.id, master_node.next.ip,

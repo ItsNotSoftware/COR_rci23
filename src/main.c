@@ -85,6 +85,5 @@ int main(int argc, char **argv) {
         }
     }
 
-    // tpc_server_close(master_node.self.tcp);
     return 0;
 }
