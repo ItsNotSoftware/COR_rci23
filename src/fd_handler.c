@@ -30,6 +30,10 @@ bool fd_is_new_connection(int fd) { return fd == tcp_server_fd; }
 bool fd_is_user_cmd(int fd) { return fd == STDIN_FILENO; }
 
 void fd_remove(int fd) {
+    char dbg[200];
+    sprintf(dbg, "Closing fd = %d", fd);
+    WARNING(dbg);
+
     close(fd);
     FD_CLR(fd, &fd_handler.current_sockets);
 

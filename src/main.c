@@ -80,7 +80,6 @@ int main(int argc, char **argv) {
                             connect_to_node(master_node.second_next.id, master_node.second_next.ip,
                                             master_node.second_next.port, false);
                         } else {
-                            close(node->tcp.fd);
                             fd_remove(node->tcp.fd);
                         }
                         continue;

@@ -112,13 +112,10 @@ bool tcp_receive_msg(TcpConnection *conn, char *msg) {
 
         if (n == 0) {
             WARNING("Connection closed by peer");
-            conn->active = false;
-            fd_remove(conn->fd);
-            close(conn->fd);
             return false;
         } else if (n < 0) {
             ERROR("Unable to read from socket");
-            exit(1);
+            return false;
         }
 
         total_bytes_recieved += n;
@@ -137,6 +134,11 @@ void connect_to_node(int id, char *ip, char *port, bool is_join) {
     Node *next = &master_node.next;
     Node *prev = &master_node.prev;
 
+    if (id == master_node.prev.id) {
+        master_node.next = master_node.prev;
+        return;
+    }
+
     // Close connection prev next comnnection to handle new node
     if (next->id != master_node.self.id && next->id != prev->id) {
         close(next->tcp.fd);
@@ -147,12 +149,7 @@ void connect_to_node(int id, char *ip, char *port, bool is_join) {
     next->id = id;
     strcpy(next->ip, ip);
     strcpy(next->port, port);
-
-    // Make node my successor
-    master_node.next.id = id;
-    strcpy(master_node.next.ip, ip);
-    strcpy(master_node.next.port, port);
-    master_node.next.tcp.active = true;
+    next->tcp.active = true;
 
     if (is_join) {
         sprintf(msg, "ENTRY %02d %s %s", master_node.self.id, master_node.self.ip,
@@ -197,6 +194,7 @@ void recieve_node() {
         if (prev->id != master_node.self.id && prev->id != next->id) {
             close(prev->tcp.fd);
             fd_remove(prev->tcp.fd);
+            *prev = master_node.self;
         }
 
         // Update Pred to new node
@@ -219,6 +217,7 @@ void recieve_node() {
         if (prev->id != master_node.self.id && prev->id != next->id) {
             close(prev->tcp.fd);
             fd_remove(prev->tcp.fd);
+            *prev = master_node.self;
         }
 
         prev->id = atoi(args[1]);
@@ -257,11 +256,13 @@ void process_node_msg(Node *sender, char *msg) {
             master_node.second_next.id = atoi(args[1]);
             strcpy(master_node.second_next.ip, args[2]);
             strcpy(master_node.second_next.port, args[3]);
+            master_node.second_next.tcp.fd = -1;
 
         } else if (strcmp(args[0], "PRED") == 0) {
             master_node.prev.id = atoi(args[1]);
             strcpy(master_node.prev.ip, "-");
             strcpy(master_node.prev.port, "-");
+            master_node.prev = *sender;
 
             sprintf(msg, "SUCC %02d %s %s", master_node.next.id, master_node.next.ip,
                     master_node.next.port);
