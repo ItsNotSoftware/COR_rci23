@@ -228,6 +228,7 @@ void recieve_node() {
 
         prev->id = atoi(args[1]);
         prev->tcp.active = true;
+        prev->tcp = new_conn;
     }
 }
 
