@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Iinclude -Wall -Wextra -std=c99 -std=gnu17 -g
+CFLAGS=-Iinclude -Wall -Wextra -std=c99 -g
 
 SRC_DIR=src
 
