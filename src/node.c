@@ -176,11 +176,6 @@ void recieve_node() {
     Node *next = &master_node.next;
     TcpConnection new_conn = {0};
 
-    if (prev->id != master_node.self.id && prev->id != next->id) {
-        close(prev->tcp.fd);
-        fd_remove(prev->tcp.fd);
-    }
-
     tcp_connection_accept(&new_conn);
     tcp_receive_msg(&new_conn, msg);
     string_to_args(msg, args);
@@ -192,6 +187,12 @@ void recieve_node() {
         if (!node_alone) {
             sprintf(msg, "ENTRY %02d %s %s", atoi(args[1]), args[2], args[3]);
             tcp_send_msg(&prev->tcp, msg);
+        }
+
+        // Close previous connection
+        if (prev->id != master_node.self.id && prev->id != next->id) {
+            close(prev->tcp.fd);
+            fd_remove(prev->tcp.fd);
         }
 
         // Update Pred to new node
@@ -219,6 +220,12 @@ void recieve_node() {
         //     tcp_send_msg(&next->tcp, msg);
         // }
     } else if (strcmp(args[0], "PRED") == 0) {
+        // Close previous connection
+        if (prev->id != master_node.self.id && prev->id != next->id) {
+            close(prev->tcp.fd);
+            fd_remove(prev->tcp.fd);
+        }
+
         prev->id = atoi(args[1]);
         prev->tcp.active = true;
     }
