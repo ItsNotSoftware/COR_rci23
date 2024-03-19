@@ -164,6 +164,10 @@ void connect_to_node(int id, char *ip, char *port, bool is_join) {
     } else {
         sprintf(msg, "PRED %02d", master_node.self.id);
         tcp_send_msg(&next->tcp, msg);
+
+        sprintf(msg, "SUCC %02d %s %s", master_node.next.id, master_node.next.ip,
+                master_node.next.port);
+        tcp_send_msg(&prev->tcp, msg);
     }
 }
 
@@ -173,6 +177,7 @@ void recieve_node() {
 
     Node *prev = &master_node.prev;
     Node *next = &master_node.next;
+
     TcpConnection new_conn = {0};
 
     tcp_connection_accept(&new_conn);
@@ -219,6 +224,10 @@ void recieve_node() {
         prev->id = atoi(args[1]);
         prev->tcp.active = true;
         prev->tcp = new_conn;
+
+        sprintf(msg, "SUCC %02d %s %s", master_node.next.id, master_node.next.ip,
+                master_node.next.port);
+        tcp_send_msg(&master_node.prev.tcp, msg);
     }
 }
 
@@ -254,8 +263,12 @@ void process_node_msg(Node *sender, char *msg) {
             strcpy(master_node.prev.ip, "-");
             strcpy(master_node.prev.port, "-");
 
+            sprintf(msg, "SUCC %02d %s %s", master_node.next.id, master_node.next.ip,
+                    master_node.next.port);
+            tcp_send_msg(&master_node.prev.tcp, msg);
+
         } else if (strcmp(args[0], "ENTRY") == 0) {
-            Node prev_backup = master_node.prev;
+            // Node prev_backup = master_node.prev;
             Node next_backup = master_node.next;
 
             connect_to_node(atoi(args[1]), args[2], args[3], false);
@@ -267,9 +280,9 @@ void process_node_msg(Node *sender, char *msg) {
             // tcp_send_msg(&master_node.next.tcp, msg);
 
             // Inform predecessor of new node
-            sprintf(msg, "SUCC %02d %s %s", master_node.next.id, master_node.next.ip,
-                    master_node.next.port);
-            tcp_send_msg(&prev_backup.tcp, msg);
+            // sprintf(msg, "SUCC %02d %s %s", master_node.next.id, master_node.next.ip,
+            //         master_node.next.port);
+            // tcp_send_msg(&prev_backup.tcp, msg);
         }
     }
 }

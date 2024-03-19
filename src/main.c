@@ -71,14 +71,21 @@ int main(int argc, char **argv) {
                     Node *node = fd_to_node(i);
                     if (node == NULL) {
                         WARNING("Invalid file descriptor");
+                        fd_remove(i);
                         continue;
                     }
 
-                    if (!tcp_receive_msg(&node->tcp, msg)) {
-                        memset(node, 0, sizeof(Node));
-                        node->id = -1;
+                    if (!tcp_receive_msg(&node->tcp, msg)) {  // Node disconnected
+                        if (node->id == master_node.next.id) {
+                            connect_to_node(master_node.second_next.id, master_node.second_next.ip,
+                                            master_node.second_next.port, false);
+                        } else {
+                            close(node->tcp.fd);
+                            fd_remove(node->tcp.fd);
+                        }
                         continue;
                     }
+
                     process_node_msg(node, msg);
                 }
             }

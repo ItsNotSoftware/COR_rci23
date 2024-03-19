@@ -101,13 +101,15 @@ void cmd_show_topology() {
         "|     Id -> %d \n"
         "|     Ip -> %s \n"
         "|     Port -> %s \n"
+        "| (%d) -> [%d] -> (%d) -> (%d) \n"
         "------------------END---------------------\n",
         master_node.self.id, master_node.self.id, master_node.self.ip, master_node.self.port,
         master_node.self.tcp.fd, master_node.prev.id, master_node.prev.id, master_node.prev.ip,
         master_node.prev.port, master_node.prev.tcp.fd, master_node.next.id, master_node.next.id,
         master_node.next.ip, master_node.next.port, master_node.next.tcp.fd,
         master_node.second_next.id, master_node.second_next.id, master_node.second_next.ip,
-        master_node.second_next.port);
+        master_node.second_next.port, master_node.prev.id, master_node.self.id, master_node.next.id,
+        master_node.second_next.id);
 }
 
 void process_command(int n_args, char args[5][256]) {
