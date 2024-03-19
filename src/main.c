@@ -74,7 +74,11 @@ int main(int argc, char **argv) {
                         continue;
                     }
 
-                    tcp_receive_msg(&node->tcp, msg);
+                    if (!tcp_receive_msg(&node->tcp, msg)) {
+                        memset(node, 0, sizeof(Node));
+                        node->id = -1;
+                        continue;
+                    }
                     process_node_msg(node, msg);
                 }
             }

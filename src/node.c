@@ -104,7 +104,7 @@ void tcp_send_msg(TcpConnection *conn, char *msg) {
     }
 }
 
-void tcp_receive_msg(TcpConnection *conn, char *msg) {
+bool tcp_receive_msg(TcpConnection *conn, char *msg) {
     int n, total_bytes_recieved = 0;
 
     while (1) {
@@ -115,7 +115,7 @@ void tcp_receive_msg(TcpConnection *conn, char *msg) {
             conn->active = false;
             fd_remove(conn->fd);
             close(conn->fd);
-            return;
+            return false;
         } else if (n < 0) {
             ERROR("Unable to read from socket");
             exit(1);
@@ -127,7 +127,7 @@ void tcp_receive_msg(TcpConnection *conn, char *msg) {
             msg[total_bytes_recieved - 1] = '\0';
 
             printf("\n\t[Recieved]: %s\n", msg);
-            return;
+            return true;
         }
     }
 }
