@@ -16,10 +16,10 @@
 #define STR_SIZE 256
 #define MAX_NUMBER_OF_NODES 16
 
-#define INFO(msg) printf("[INFO]: %s\n", msg)
-#define ERROR(msg) printf("[ERROR]: %s -> %s:%d\n", msg, __FILE__, __LINE__)
-#define WARNING(msg) printf("[WARNING]: %s -> %s:%d\n", msg, __FILE__, __LINE__)
-#define DEBUG(msg) printf("[DEBUG]: %s -> %s:%d\n", msg, __FILE__, __LINE__)
-#define DEBUG2(msg1, msg2) printf("[DEBUG]: %s %s -> %s:%d\n", msg1, msg2, __FILE__, __LINE__)
+#define INFO(x) printf("[INFO]: %s\n", x)
+#define ERROR(x) printf("[ERROR]: %s -> %s:%d\n", x, __FILE__, __LINE__)
+#define WARNING(x) printf("[WARNING]: %s -> %s:%d\n", x, __FILE__, __LINE__)
+#define DEBUG(x) printf("[DEBUG]: %s -> %s:%d\n", x, __FILE__, __LINE__)
+#define DEBUG2(x1, x2) printf("[DEBUG]: %s %s -> %s:%d\n", x1, x2, __FILE__, __LINE__)
 
 #endif

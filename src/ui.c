@@ -126,6 +126,9 @@ void process_command(int n_args, char args[5][256]) {
     } else if (strcmp(args[0], "m") == 0 && n_args == 3) {
     } else if (strcmp(args[0], "l") == 0 && n_args == 1) {
         server_disconnect(&server);
+        master_node.next = master_node.self;
+        master_node.prev = master_node.self;
+        master_node.second_next = master_node.self;
     } else if (strcmp(args[0], "x") == 0 && n_args == 1) {
         server_disconnect(&server);
         exit(0);

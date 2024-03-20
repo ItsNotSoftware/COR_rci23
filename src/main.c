@@ -76,16 +76,39 @@ int main(int argc, char **argv) {
                     }
 
                     if (!tcp_receive_msg(&node->tcp, msg)) {  // Node disconnected
+                        fd_remove(node->tcp.fd);
+                        close(node->tcp.fd);
+
                         if (node->id == master_node.next.id) {
+                            // If node is alone
+                            if (master_node.next.id == master_node.prev.id) {
+                                master_node.next = master_node.self;
+                                master_node.second_next = master_node.self;
+                                master_node.prev = master_node.self;
+                                continue;
+                            }
+
+                            // If there is just 2 nodes on the net
+                            if (master_node.second_next.id == master_node.prev.id) {
+                                master_node.next = master_node.prev;
+                                master_node.second_next = master_node.self;
+
+                                sprintf(msg, "SUCC %02d %s %s", master_node.next.id,
+                                        master_node.next.ip, master_node.next.port);
+                                tcp_send_msg(&master_node.next.tcp, msg);
+
+                                sprintf(msg, "PRED %02d", master_node.self.id);
+                                tcp_send_msg(&master_node.next.tcp, msg);
+
+                                continue;
+                            }
+
                             connect_to_node(master_node.second_next.id, master_node.second_next.ip,
                                             master_node.second_next.port, false);
-                        } else {
-                            fd_remove(node->tcp.fd);
                         }
-                        continue;
+                    } else {
+                        process_node_msg(node, msg);
                     }
-
-                    process_node_msg(node, msg);
                 }
             }
         }

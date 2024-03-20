@@ -36,6 +36,7 @@ TcpConnection tcp_connection_create(const char *ip, const char *port);
 void tcp_server_create(const char *ip, const char *port);
 void connect_to_node(int id, char *ip, char *port, bool is_join);
 bool tcp_receive_msg(TcpConnection *conn, char *msg);
+void tcp_send_msg(TcpConnection *conn, char *msg);
 void tcp_server_close();
 void recieve_node();
 void process_node_msg(Node *sender, char *msg);

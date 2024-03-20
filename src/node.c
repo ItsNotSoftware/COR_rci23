@@ -231,8 +231,9 @@ void recieve_node() {
 }
 
 void process_node_msg(Node *sender, char *msg) {
+    int n_args = 0;
     char args[4][STR_SIZE] = {0};  // msg1
-    char *msg1 = NULL, *msg2 = NULL;
+    char *msg2 = NULL;
 
     // Split message if 2 messages come together
     char *divider = strchr(msg, '\n');
@@ -241,49 +242,50 @@ void process_node_msg(Node *sender, char *msg) {
         *divider = '\0';
         msg2 = divider + 1;
     }
-    msg1 = msg;
 
-    // Process one message at a time
-    for (msg = msg1; msg != msg2; msg = msg2) {
-        if (msg == NULL) return;  // No message to process
+    n_args = string_to_args(msg, args);
+    if (n_args == 0) return;
+    DEBUG2("Processing message: ", args[0]);
 
-        int n_args = string_to_args(msg, args);
-        if (n_args == 0) return;
+    if (strcmp(args[0], "SUCC") == 0) {
+        DEBUG("SUCC");
 
-        if (strcmp(args[0], "SUCC") == 0) {
-            fflush(stdout);
+        master_node.second_next.id = atoi(args[1]);
+        strcpy(master_node.second_next.ip, args[2]);
+        strcpy(master_node.second_next.port, args[3]);
+        master_node.second_next.tcp.fd = -1;
 
-            master_node.second_next.id = atoi(args[1]);
-            strcpy(master_node.second_next.ip, args[2]);
-            strcpy(master_node.second_next.port, args[3]);
-            master_node.second_next.tcp.fd = -1;
+    } else if (strcmp(args[0], "PRED") == 0) {
+        DEBUG("PRED");
 
-        } else if (strcmp(args[0], "PRED") == 0) {
-            master_node.prev.id = atoi(args[1]);
-            strcpy(master_node.prev.ip, "-");
-            strcpy(master_node.prev.port, "-");
-            master_node.prev = *sender;
+        master_node.prev.id = atoi(args[1]);
+        strcpy(master_node.prev.ip, "-");
+        strcpy(master_node.prev.port, "-");
+        master_node.prev = *sender;
 
-            sprintf(msg, "SUCC %02d %s %s", master_node.next.id, master_node.next.ip,
-                    master_node.next.port);
-            tcp_send_msg(&master_node.prev.tcp, msg);
+        sprintf(msg, "SUCC %02d %s %s", master_node.next.id, master_node.next.ip,
+                master_node.next.port);
+        tcp_send_msg(&master_node.prev.tcp, msg);
 
-        } else if (strcmp(args[0], "ENTRY") == 0) {
-            // Node prev_backup = master_node.prev;
-            Node next_backup = master_node.next;
+    } else if (strcmp(args[0], "ENTRY") == 0) {
+        DEBUG("ENTRY");
 
-            connect_to_node(atoi(args[1]), args[2], args[3], false);
+        // Node prev_backup = master_node.prev;
+        Node next_backup = master_node.next;
 
-            master_node.second_next = next_backup;
+        connect_to_node(atoi(args[1]), args[2], args[3], false);
 
-            // Inform new node of me
-            // sprintf(msg, "PRED %02d", master_node.self.id);
-            // tcp_send_msg(&master_node.next.tcp, msg);
+        master_node.second_next = next_backup;
 
-            // Inform predecessor of new node
-            // sprintf(msg, "SUCC %02d %s %s", master_node.next.id, master_node.next.ip,
-            //         master_node.next.port);
-            // tcp_send_msg(&prev_backup.tcp, msg);
-        }
+        // Inform new node of me
+        // sprintf(msg, "PRED %02d", master_node.self.id);
+        // tcp_send_msg(&master_node.next.tcp, msg);
+
+        // Inform predecessor of new node
+        // sprintf(msg, "SUCC %02d %s %s", master_node.next.id, master_node.next.ip,
+        //         master_node.next.port);
+        // tcp_send_msg(&prev_backup.tcp, msg);
     }
+
+    if (msg2 != NULL) process_node_msg(sender, msg2);  //  next message
 }
