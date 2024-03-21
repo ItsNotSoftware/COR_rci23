@@ -90,12 +90,7 @@ int main(int argc, char **argv) {
                         fd_remove(node->tcp.fd);
                         close(node->tcp.fd);
 
-                        if (is_chord(node->id)) {
-                            chord_remove(node->id);
-                            continue;
-                        }
-
-                        if (node->id == master_node.next.id) {
+                        if (node->id == master_node.next.id) {  // is next
                             // If node is alone
                             if (master_node.next.id == master_node.prev.id) {
                                 master_node.next = master_node.self;
@@ -121,6 +116,15 @@ int main(int argc, char **argv) {
 
                             connect_to_node(master_node.second_next.id, master_node.second_next.ip,
                                             master_node.second_next.port, false);
+
+                        } else if (node->id == master_node.prev.id) {  // is prev
+                            master_node.prev = master_node.next;
+                            continue;
+                        }
+
+                        if (is_chord(node->id)) {
+                            chord_remove(node->id);
+                            continue;
                         }
                     } else {
                         process_node_msg(node, msg);

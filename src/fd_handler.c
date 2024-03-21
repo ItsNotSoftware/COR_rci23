@@ -8,6 +8,10 @@ void fd_handler_init() { FD_ZERO(&fd_handler.current_sockets); }
 void fd_restore() { fd_handler.ready_sockets = fd_handler.current_sockets; }
 
 void fd_add(int fd) {
+    char dbg[200];
+    sprintf(dbg, "Adding fd = %d", fd);
+    WARNING(dbg);
+
     FD_SET(fd, &fd_handler.current_sockets);
     fd_handler.fds[fd_handler.fd_count++] = fd;
 
