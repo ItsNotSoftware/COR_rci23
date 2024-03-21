@@ -3,10 +3,9 @@
 
 #include "headers.h"
 
-typedef struct
-{
+typedef struct {
     int max_fd;
-    int fds[101]; // open file descriptors
+    int fds[101];  // open file descriptors
     int fd_count;
 
     fd_set current_sockets, ready_sockets;

@@ -7,6 +7,8 @@
 MasterNode master_node = {0};
 ServerInfo server;
 
+extern int n_chords;
+
 char reg_ip[STR_SIZE];
 char reg_port[STR_SIZE];
 
@@ -19,9 +21,17 @@ Node *fd_to_node(int fd) {
         return &master_node.next;
     } else if (fd == master_node.second_next.tcp.fd) {
         return &master_node.second_next;
+    } else if (fd == master_node.owned_chord.tcp.fd) {
+        return &master_node.owned_chord;
     } else {
-        return NULL;
+        for (int i = 0; i < n_chords; i++) {
+            if (fd == master_node.chords[i].tcp.fd) {
+                return &master_node.chords[i];
+            }
+        }
     }
+
+    return NULL;
 }
 
 void process_argv(int argc, char **argv) {
@@ -44,6 +54,7 @@ void process_argv(int argc, char **argv) {
 int main(int argc, char **argv) {
     process_argv(argc, argv);
     server = server_connect();
+    master_node.owned_chord.id = -1;  // not_set
 
     // Adding fd's
     fd_handler_init();
@@ -78,6 +89,10 @@ int main(int argc, char **argv) {
                     if (!tcp_receive_msg(&node->tcp, msg)) {  // Node disconnected
                         fd_remove(node->tcp.fd);
                         close(node->tcp.fd);
+
+                        if (is_chord(node->id)) {
+                            chord_remove(node->id);
+                        }
 
                         if (node->id == master_node.next.id) {
                             // If node is alone
