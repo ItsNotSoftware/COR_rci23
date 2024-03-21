@@ -92,6 +92,7 @@ int main(int argc, char **argv) {
 
                         if (is_chord(node->id)) {
                             chord_remove(node->id);
+                            continue;
                         }
 
                         if (node->id == master_node.next.id) {
