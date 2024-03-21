@@ -1,7 +1,10 @@
 #include "ui.h"
 
+#include "fd_handler.h"
 #include "node.h"
 #include "server.h"
+
+extern int n_chords;
 
 #define CHECK_BOUNDS(x, min, max)                   \
     if (x < min || x > max) {                       \
@@ -13,7 +16,7 @@ extern ServerInfo server;
 extern MasterNode master_node;
 extern ServerInfo server;
 
-void command_join(int ring, int id) {
+void cmd_join(int ring, int id) {
     CHECK_BOUNDS(ring, 0, 999);
     CHECK_BOUNDS(id, 0, 99);
 
@@ -101,8 +104,9 @@ void cmd_show_topology() {
         "|     Id -> %d \n"
         "|     Ip -> %s \n"
         "|     Port -> %s \n"
+        "|\n"
         "| (%d) -> [%d] -> (%d) -> (%d) \n"
-        "------------------END---------------------\n",
+        "|\n",
         master_node.self.id, master_node.self.id, master_node.self.ip, master_node.self.port,
         master_node.self.tcp.fd, master_node.prev.id, master_node.prev.id, master_node.prev.ip,
         master_node.prev.port, master_node.prev.tcp.fd, master_node.next.id, master_node.next.id,
@@ -110,16 +114,87 @@ void cmd_show_topology() {
         master_node.second_next.id, master_node.second_next.id, master_node.second_next.ip,
         master_node.second_next.port, master_node.prev.id, master_node.self.id, master_node.next.id,
         master_node.second_next.id);
+    printf("| Chords:\n");
+
+    if (master_node.owned_chord.id != -1) {
+        printf("|     Owned -> %d\n", master_node.owned_chord.id);
+    } else {
+        printf("|     Owned-> -\n");
+    }
+
+    printf("|     Connected -> ");
+    for (int i = 0; i < n_chords; i++) {
+        printf("%d ", master_node.chords[i].id);
+    }
+
+    printf("\n------------------END---------------------\n");
+}
+
+void cmd_chord() {
+    // Check nodes in ring
+    char msg[BUFFER_SIZE] = {0};
+    char ip[20], port_s[20];
+    sprintf(msg, "NODES %d", master_node.ring);
+    server_send_msg(&server, msg);
+
+    char *answer = server_receive_msg(&server);
+
+    char *token = strtok(answer, "\n");
+    if (token == NULL) {
+        perror("[ERROR]: Server did not respond!\n");
+        return;
+    }
+
+    // Check if ids on ring
+    int id, ip1, ip2, ip3, ip4, port;
+
+    while ((token = strtok(NULL, "\n")) != NULL) {
+        // Extract the first number of squence
+        if (sscanf(token, "%d %d.%d.%d.%d %d", &id, &ip1, &ip2, &ip3, &ip4, &port) == 6) {
+            bool can_join =
+                id != master_node.self.id && id != master_node.prev.id && id != master_node.next.id;
+
+            if (can_join) {
+                sprintf(ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+                sprintf(port_s, "%d", port);
+
+                create_chord(id, ip, port_s);
+
+                printf("Chord created with %d\n", id);
+                return;
+            }
+        }
+    }
+
+    printf("No available nodes to create chord\n");
 }
 
 void process_command(int n_args, char args[5][256]) {
     if (strcmp(args[0], "j") == 0 && n_args == 3) {
-        command_join(atoi(args[1]), atoi(args[2]));
+        cmd_join(atoi(args[1]), atoi(args[2]));
+
     } else if (strcmp(args[0], "dj") == 0 && n_args == 5) {
     } else if (strcmp(args[0], "c") == 0 && n_args == 1) {
+        if (master_node.owned_chord.id != -1) {
+            printf("Already have a chord\n");
+            return;
+        }
+
+        cmd_chord();
+
     } else if (strcmp(args[0], "rc") == 0 && n_args == 1) {
+        if (master_node.owned_chord.id == -1) {
+            printf("No chord to remove\n");
+            return;
+        }
+
+        fd_remove(master_node.owned_chord.tcp.fd);
+        close(master_node.owned_chord.tcp.fd);
+        master_node.owned_chord.id = -1;
+
     } else if (strcmp(args[0], "st") == 0 && n_args == 1) {
         cmd_show_topology();
+
     } else if (strcmp(args[0], "sr") == 0 && n_args == 2) {
     } else if (strcmp(args[0], "sp") == 0 && n_args == 2) {
     } else if (strcmp(args[0], "sf") == 0 && n_args == 1) {
@@ -129,9 +204,11 @@ void process_command(int n_args, char args[5][256]) {
         master_node.next = master_node.self;
         master_node.prev = master_node.self;
         master_node.second_next = master_node.self;
+
     } else if (strcmp(args[0], "x") == 0 && n_args == 1) {
         server_disconnect(&server);
         exit(0);
+
     } else {
         printf("Invalid command\n");
     }

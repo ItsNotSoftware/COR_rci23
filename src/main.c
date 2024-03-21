@@ -7,6 +7,8 @@
 MasterNode master_node = {0};
 ServerInfo server;
 
+extern int n_chords;
+
 char reg_ip[STR_SIZE];
 char reg_port[STR_SIZE];
 
@@ -19,9 +21,17 @@ Node *fd_to_node(int fd) {
         return &master_node.next;
     } else if (fd == master_node.second_next.tcp.fd) {
         return &master_node.second_next;
+    } else if (fd == master_node.owned_chord.tcp.fd) {
+        return &master_node.owned_chord;
     } else {
-        return NULL;
+        for (int i = 0; i < n_chords; i++) {
+            if (fd == master_node.chords[i].tcp.fd) {
+                return &master_node.chords[i];
+            }
+        }
     }
+
+    return NULL;
 }
 
 void process_argv(int argc, char **argv) {
@@ -44,6 +54,7 @@ void process_argv(int argc, char **argv) {
 int main(int argc, char **argv) {
     process_argv(argc, argv);
     server = server_connect();
+    master_node.owned_chord.id = -1;  // not_set
 
     // Adding fd's
     fd_handler_init();
@@ -79,7 +90,7 @@ int main(int argc, char **argv) {
                         fd_remove(node->tcp.fd);
                         close(node->tcp.fd);
 
-                        if (node->id == master_node.next.id) {
+                        if (node->id == master_node.next.id) {  // is next
                             // If node is alone
                             if (master_node.next.id == master_node.prev.id) {
                                 master_node.next = master_node.self;
@@ -105,6 +116,15 @@ int main(int argc, char **argv) {
 
                             connect_to_node(master_node.second_next.id, master_node.second_next.ip,
                                             master_node.second_next.port, false);
+
+                        } else if (node->id == master_node.prev.id) {  // is prev
+                            master_node.prev = master_node.next;
+                            continue;
+                        }
+
+                        if (is_chord(node->id)) {
+                            chord_remove(node->id);
+                            continue;
                         }
                     } else {
                         process_node_msg(node, msg);

@@ -2,6 +2,8 @@
 
 #include "fd_handler.h"
 
+int n_chords = 0;
+
 extern MasterNode master_node;
 int tcp_server_fd;
 
@@ -129,6 +131,20 @@ bool tcp_receive_msg(TcpConnection *conn, char *msg) {
     }
 }
 
+void create_chord(int id, char *ip, char *port) {
+    char msg[STR_SIZE] = {0};
+    Node *chord = &master_node.owned_chord;
+
+    chord->id = id;
+    strcpy(chord->ip, ip);
+    strcpy(chord->port, port);
+    chord->tcp = tcp_connection_create(ip, port);
+    chord->tcp.active = true;
+
+    sprintf(msg, "CHORD %02d", master_node.self.id);
+    tcp_send_msg(&chord->tcp, msg);
+}
+
 void connect_to_node(int id, char *ip, char *port, bool is_join) {
     char msg[STR_SIZE] = {0};
     Node *next = &master_node.next;
@@ -227,6 +243,9 @@ void recieve_node() {
         sprintf(msg, "SUCC %02d %s %s", master_node.next.id, master_node.next.ip,
                 master_node.next.port);
         tcp_send_msg(&master_node.prev.tcp, msg);
+    } else if (strcmp(args[0], "CHORD") == 0) {
+        Node n = {.id = atoi(args[1]), .ip = "-", .port = "-", .tcp = new_conn};
+        chord_push(n);
     }
 }
 
@@ -245,19 +264,14 @@ void process_node_msg(Node *sender, char *msg) {
 
     n_args = string_to_args(msg, args);
     if (n_args == 0) return;
-    DEBUG2("Processing message: ", args[0]);
 
     if (strcmp(args[0], "SUCC") == 0) {
-        DEBUG("SUCC");
-
         master_node.second_next.id = atoi(args[1]);
         strcpy(master_node.second_next.ip, args[2]);
         strcpy(master_node.second_next.port, args[3]);
         master_node.second_next.tcp.fd = -1;
 
     } else if (strcmp(args[0], "PRED") == 0) {
-        DEBUG("PRED");
-
         master_node.prev.id = atoi(args[1]);
         strcpy(master_node.prev.ip, "-");
         strcpy(master_node.prev.port, "-");
@@ -268,24 +282,39 @@ void process_node_msg(Node *sender, char *msg) {
         tcp_send_msg(&master_node.prev.tcp, msg);
 
     } else if (strcmp(args[0], "ENTRY") == 0) {
-        DEBUG("ENTRY");
-
-        // Node prev_backup = master_node.prev;
         Node next_backup = master_node.next;
-
         connect_to_node(atoi(args[1]), args[2], args[3], false);
-
         master_node.second_next = next_backup;
-
-        // Inform new node of me
-        // sprintf(msg, "PRED %02d", master_node.self.id);
-        // tcp_send_msg(&master_node.next.tcp, msg);
-
-        // Inform predecessor of new node
-        // sprintf(msg, "SUCC %02d %s %s", master_node.next.id, master_node.next.ip,
-        //         master_node.next.port);
-        // tcp_send_msg(&prev_backup.tcp, msg);
     }
 
     if (msg2 != NULL) process_node_msg(sender, msg2);  //  next message
+}
+
+void chord_push(Node node) { master_node.chords[n_chords++] = node; }
+
+void chord_remove(int id) {
+    if (master_node.owned_chord.id == id) {
+        master_node.owned_chord.id = -1;
+        return;
+    }
+
+    for (int i = 0; i < n_chords; i++) {
+        if (master_node.chords[i].id == id) {
+            // Shift all elements to left
+            for (int j = i; j < n_chords - 1; j++) {
+                master_node.chords[j] = master_node.chords[j + 1];
+            }
+            n_chords--;
+            break;
+        }
+    }
+}
+
+bool is_chord(int id) {
+    if (master_node.owned_chord.id == id) return true;
+
+    for (int i = 0; i < n_chords; i++) {
+        if (master_node.chords[i].id == id) return true;
+    }
+    return false;
 }
