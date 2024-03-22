@@ -13,6 +13,13 @@ extern int n_chords;
 char reg_ip[STR_SIZE];
 char reg_port[STR_SIZE];
 
+/*
+ * Associates an fd to a Node
+ *
+ * @param fd: the file descriptor to associate
+ *
+ * @return: the Node associated with the fd
+ */
 Node *fd_to_node(int fd) {
     if (fd == master_node.self.tcp.fd) {
         return &master_node.self;
@@ -35,6 +42,9 @@ Node *fd_to_node(int fd) {
     return NULL;
 }
 
+/*
+ * Processes the command from the user
+ */
 void process_argv(int argc, char **argv) {
     if (argc == 5) {
         strcpy(master_node.self.ip, argv[1]);

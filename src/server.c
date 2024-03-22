@@ -7,6 +7,11 @@ extern char reg_port[STR_SIZE];
 
 extern MasterNode master_node;
 
+/*
+ * Connects to the server
+ *
+ * @return: the ServerInfo struct
+ */
 ServerInfo server_connect() {
     ServerInfo info = {0};
     int errcode;
@@ -33,6 +38,11 @@ ServerInfo server_connect() {
     return info;
 }
 
+/*
+ * Registers the node to the server
+ *
+ * @param info: the ServerInfo struct
+ */
 void server_send_msg(ServerInfo *info, const char *msg) {
     int n = sendto(info->fd, msg, strlen(msg), 0, info->res->ai_addr, info->res->ai_addrlen);
     if (n == -1) {
@@ -43,6 +53,13 @@ void server_send_msg(ServerInfo *info, const char *msg) {
     }
 }
 
+/*
+ * Receives a message from the server
+ *
+ * @param info: the ServerInfo struct
+ *
+ * @return: the message received
+ */
 char *server_receive_msg(ServerInfo *info) {
     int n = recvfrom(info->fd, info->buffer, BUFFER_SIZE, 0, NULL, NULL);
     if (n == -1) {
@@ -55,6 +72,11 @@ char *server_receive_msg(ServerInfo *info) {
     return info->buffer;
 }
 
+/*
+ * Registers the node to the server
+ *
+ * @param info: the ServerInfo struct
+ */
 void server_disconnect(ServerInfo *info) {
     char msg[STR_SIZE];
     sprintf(msg, "UNREG %d %d", master_node.ring, master_node.self.id);

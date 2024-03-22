@@ -17,6 +17,12 @@ extern ServerInfo server;
 extern MasterNode master_node;
 extern ServerInfo server;
 
+/*
+ * Joins the ring
+ *
+ * @param ring: the ring to join
+ * @param id: the id of the node
+ */
 void cmd_join(int ring, int id) {
     CHECK_BOUNDS(ring, 0, 999);
     CHECK_BOUNDS(id, 0, 99);
@@ -85,6 +91,14 @@ void cmd_join(int ring, int id) {
     }
 }
 
+/*
+ * Directly joins the ring
+ *
+ * @param id: the id of the node
+ * @param succ_id: the id of the successor
+ * @param succ_ip: the ip of the successor
+ * @param succ_tcp: the port of the successor
+ */
 void cmd_direct_join(int id, int succ_id, char *succ_ip, char *succ_tcp) {
     CHECK_BOUNDS(id, 0, 99);
     CHECK_BOUNDS(succ_id, 0, 99);
@@ -151,6 +165,13 @@ void cmd_show_topology() {
     printf("\n------------------END---------------------\n");
 }
 
+/*
+ * Creates a chord
+ *
+ * @param id: the id of the chord
+ * @param ip: the ip of the chord
+ * @param port: the port of the chord
+ */
 void cmd_chord() {
     // Check nodes in ring
     char msg[BUFFER_SIZE] = {0};
@@ -190,6 +211,11 @@ void cmd_chord() {
     printf("No available nodes to create chord\n");
 }
 
+/*
+ * Shows the path to a node
+ *
+ * @param dest: the destination node
+ */
 void cmd_show_path(int dest) {
     int *path = get_shortest_path(dest);
 
@@ -209,6 +235,9 @@ void cmd_show_path(int dest) {
     printf("\n\n");
 }
 
+/*
+ * Leaves the ring
+ */
 void cmd_leave() {
     server_disconnect(&server);
 
@@ -244,12 +273,24 @@ void cmd_leave() {
     fd_add(STDIN_FILENO);
 }
 
+/*
+ * Sends a message to a node
+ *
+ * @param dest: the destination node
+ * @param msg: the message to send
+ */
 void cmd_send_msg(int dest, char *msg) {
     char new_msg[STR_SIZE] = {0};
     sprintf(new_msg, "CHAT %02d %02d %s", master_node.self.id, dest, msg);
     tcp_send_msg(&master_node.next.tcp, new_msg);
 }
 
+/*
+ * Processes the command
+ *
+ * @param n_args: the number of arguments
+ * @param args: the arguments
+ */
 void process_command(int n_args, char args[5][256]) {
     if (strcmp(args[0], "j") == 0 && n_args == 3) {
         cmd_join(atoi(args[1]), atoi(args[2]));
@@ -294,6 +335,9 @@ void process_command(int n_args, char args[5][256]) {
     }
 }
 
+/*
+ * Reads the console
+ */
 void read_console() {
     char buffer[BUFFER_SIZE] = {0};
     char args[5][STR_SIZE] = {0};
