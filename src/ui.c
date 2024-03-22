@@ -71,6 +71,8 @@ void cmd_join(int ring, int id) {
     master_node.next.tcp.active = false;
     master_node.second_next.tcp.active = false;
 
+    tables_init();
+
     if (i != -1)  // Nodes in ring
     {
         char new_ip[STR_SIZE] = {0};
@@ -170,6 +172,25 @@ void cmd_chord() {
     printf("No available nodes to create chord\n");
 }
 
+void cmd_show_path(int dest) {
+    int *path = get_shortest_path(dest);
+
+    if (path[0] == NONE) {
+        printf("\nNo path found\n\n");
+        return;
+    }
+
+    printf("\nPath to %d: ", dest);
+    for (int i = 0; i < MAX_NUMBER_OF_NODES; i++) {
+        if (path[i] == NONE) {
+            break;
+        }
+
+        printf("%d -> ", path[i]);
+    }
+    printf("\n\n");
+}
+
 void process_command(int n_args, char args[5][256]) {
     if (strcmp(args[0], "j") == 0 && n_args == 3) {
         cmd_join(atoi(args[1]), atoi(args[2]));
@@ -198,22 +219,7 @@ void process_command(int n_args, char args[5][256]) {
 
     } else if (strcmp(args[0], "sr") == 0 && n_args == 2) {
     } else if (strcmp(args[0], "sp") == 0 && n_args == 2) {
-        int *path = get_shortest_path(atoi(args[1]));
-
-        if (path[0] == NONE) {
-            printf("No path found\n");
-            return;
-        }
-
-        for (int i = 0; i < MAX_NUMBER_OF_NODES; i++) {
-            if (path[i] == NONE) {
-                break;
-            }
-
-            printf("%d -> ", path[i]);
-        }
-        printf("\n");
-
+        cmd_show_path(atoi(args[1]));
     } else if (strcmp(args[0], "sf") == 0 && n_args == 1) {
     } else if (strcmp(args[0], "m") == 0 && n_args == 3) {
     } else if (strcmp(args[0], "l") == 0 && n_args == 1) {

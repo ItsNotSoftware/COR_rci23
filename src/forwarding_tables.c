@@ -17,6 +17,8 @@ int *get_last_element(int *arr) {
 void tables_init() {
     memset(forwarding_table, NONE, sizeof(forwarding_table));
     memset(shortest_path_table, NONE, sizeof(shortest_path_table));
+
+    shortest_path_table[master_node.self.id][0] = master_node.self.id;
 }
 
 void forwarding_table_reset_entry(int dest, int src) {
@@ -97,24 +99,24 @@ void send_shortest_path_table(Node *dest) {
 }
 
 void update_shotest_path(int dest, char *path) {
-    int new_size = 0;
+    int new_size = 1;
     int current_size =
         (get_last_element(shortest_path_table[dest]) - shortest_path_table[dest]) / sizeof(int);
 
     int new_route[MAX_NUMBER_OF_NODES] = {0};
     memset(new_route, NONE, sizeof(new_route));
+    new_route[0] = master_node.self.id;
 
     // Parse the path
     char *token = strtok(path, "-");
     while (token != NULL) {
         int id = atoi(token);
-        new_route[id] = id;
+        new_route[new_size++] = id;
 
         token = strtok(NULL, "-");
-        new_size++;
     }
 
-    if (new_size > current_size) {
+    if (new_size < current_size && new_size != 1) {
         memcpy(shortest_path_table[dest], new_route, sizeof(new_route));
     }
 }

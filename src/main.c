@@ -57,8 +57,6 @@ int main(int argc, char **argv) {
     server = server_connect();
     master_node.owned_chord.id = -1;  // not_set
 
-    tables_init();
-
     // Adding fd's
     fd_handler_init();
     fd_add(STDIN_FILENO);
