@@ -1,6 +1,7 @@
 #include "ui.h"
 
 #include "fd_handler.h"
+#include "forwarding_tables.h"
 #include "node.h"
 #include "server.h"
 
@@ -197,6 +198,22 @@ void process_command(int n_args, char args[5][256]) {
 
     } else if (strcmp(args[0], "sr") == 0 && n_args == 2) {
     } else if (strcmp(args[0], "sp") == 0 && n_args == 2) {
+        int *path = get_shortest_path(atoi(args[1]));
+
+        if (path[0] == NONE) {
+            printf("No path found\n");
+            return;
+        }
+
+        for (int i = 0; i < MAX_NUMBER_OF_NODES; i++) {
+            if (path[i] == NONE) {
+                break;
+            }
+
+            printf("%d -> ", path[i]);
+        }
+        printf("\n");
+
     } else if (strcmp(args[0], "sf") == 0 && n_args == 1) {
     } else if (strcmp(args[0], "m") == 0 && n_args == 3) {
     } else if (strcmp(args[0], "l") == 0 && n_args == 1) {

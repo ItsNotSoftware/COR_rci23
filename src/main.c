@@ -1,4 +1,5 @@
 #include "fd_handler.h"
+#include "forwarding_tables.h"
 #include "headers.h"
 #include "node.h"
 #include "server.h"
@@ -55,6 +56,8 @@ int main(int argc, char **argv) {
     process_argv(argc, argv);
     server = server_connect();
     master_node.owned_chord.id = -1;  // not_set
+
+    tables_init();
 
     // Adding fd's
     fd_handler_init();
