@@ -17,6 +17,8 @@ int get_first_step(int dest);
 void forwarding_table_push(int dest, int src, int id);
 void shortest_path_table_push(int dest, int id);
 void update_shotest_path(int dest, char *path);
+void update_forwarding_table(int dest, int src, char *path);
+void forwarding_table_add_direct_conn(int dest, int src);
 
 void send_shortest_path_table(Node *dest);
 

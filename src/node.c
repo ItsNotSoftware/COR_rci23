@@ -145,7 +145,7 @@ void create_chord(int id, char *ip, char *port) {
     sprintf(msg, "CHORD %02d", master_node.self.id);
     tcp_send_msg(&chord->tcp, msg);
 
-    shortest_path_table_push(chord->id, chord->id);
+    forwarding_table_add_direct_conn(chord->id, chord->id);
     send_shortest_path_table(chord);
 }
 
@@ -188,7 +188,7 @@ void connect_to_node(int id, char *ip, char *port, bool is_join) {
         tcp_send_msg(&prev->tcp, msg);
     }
 
-    shortest_path_table_push(next->id, next->id);
+    forwarding_table_add_direct_conn(next->id, next->id);  //*
     send_shortest_path_table(next);
 }
 
@@ -256,8 +256,8 @@ void recieve_node() {
         chord_push(n);
     }
 
-    shortest_path_table_push(prev->id, prev->id);
-    send_shortest_path_table(prev);
+    // forwarding_table_add_direct_conn(prev->id, prev->id);
+    // send_shortest_path_table(prev);
 }
 
 void process_node_msg(Node *sender, char *msg) {
@@ -297,7 +297,7 @@ void process_node_msg(Node *sender, char *msg) {
         connect_to_node(atoi(args[1]), args[2], args[3], false);
         master_node.second_next = next_backup;
     } else if (strcmp(args[0], "ROUTE") == 0) {
-        update_shotest_path(atoi(args[2]), args[3]);
+        // update_forwarding_table(atoi(args[2]), atoi(args[1]), args[3]);
     }
 
     if (msg2 != NULL) process_node_msg(sender, msg2);  //  next message

@@ -18,6 +18,7 @@ void tables_init() {
     memset(forwarding_table, NONE, sizeof(forwarding_table));
     memset(shortest_path_table, NONE, sizeof(shortest_path_table));
 
+    forwarding_table[master_node.self.id][master_node.self.id][0] = master_node.self.id;
     shortest_path_table[master_node.self.id][0] = master_node.self.id;
 }
 
@@ -36,39 +37,50 @@ int *get_forwarding(int dest, int src) { return forwarding_table[dest][src]; }
 int *get_shortest_path(int dest) { return shortest_path_table[dest]; }
 int get_first_step(int dest) { return shortest_path_table[dest][1]; }
 
-void forwarding_table_push(int dest, int src, int id) {
-    int *last = get_last_element(forwarding_table[dest][src]);
-    if (last == NULL) {
-        ERROR("Forwarding table is full\n");
-        exit(1);
-    }
+void update_shortest_paths() {
+    for (int dest = 0; dest < 100; dest++) {
+        int new_path[MAX_NUMBER_OF_NODES];
+        int shortest = 1000;
+        bool updated = false;
 
-    // If the path is empty, add the self to the start of the path
-    if (last == forwarding_table[dest][src]) {
-        forwarding_table[dest][src][0] = master_node.self.id;
-        forwarding_table[dest][src][1] = id;
-        return;
-    }
+        for (int src = 0; src < 100; src++) {
+            if (forwarding_table[dest][src][0] == NONE) {
+                continue;
+            }
 
-    *last = id;
+            int i;
+            // Walk through the path
+            for (i = 0; i < MAX_NUMBER_OF_NODES; i++) {
+                if (forwarding_table[dest][src][i] == NONE) {
+                    break;
+                }
+
+                new_path[i] = forwarding_table[dest][src][i];
+            }
+
+            // Update the shortest path
+            if (i > 0 && i < shortest) {
+                updated = true;
+                shortest = i;
+                memcpy(shortest_path_table[dest], new_path, sizeof(shortest_path_table[dest]));
+                shortest_path_table[dest][i] = NONE;
+            }
+        }
+
+        if (!updated) {
+            memset(shortest_path_table[dest], NONE, sizeof(shortest_path_table[dest]));
+        }
+    }
 }
 
-void shortest_path_table_push(int dest, int id) {
-    int *last = get_last_element(shortest_path_table[dest]);
+void forwarding_table_add_direct_conn(int dest, int src) {
+    forwarding_table[dest][src][0] = master_node.self.id;
+    forwarding_table[dest][src][1] = src;
+    forwarding_table[dest][src][2] = NONE;
 
-    if (last == NULL) {
-        ERROR("Shortest path table is full\n");
-        exit(1);
-    }
-
-    // If the path is empty, add the self to the start of the path
-    if (last == shortest_path_table[dest]) {
-        shortest_path_table[dest][0] = master_node.self.id;
-        shortest_path_table[dest][1] = id;
-        return;
-    }
-
-    *last = id;
+    shortest_path_table[dest][0] = master_node.self.id;
+    shortest_path_table[dest][1] = dest;
+    shortest_path_table[dest][2] = NONE;
 }
 
 void send_shortest_path_table(Node *dest) {
@@ -98,25 +110,22 @@ void send_shortest_path_table(Node *dest) {
     }
 }
 
-void update_shotest_path(int dest, char *path) {
-    int new_size = 1;
-    int current_size =
-        (get_last_element(shortest_path_table[dest]) - shortest_path_table[dest]) / sizeof(int);
+void update_forwarding_table(int dest, int src, char *path) {
+    int i;
 
-    int new_route[MAX_NUMBER_OF_NODES] = {0};
-    memset(new_route, NONE, sizeof(new_route));
-    new_route[0] = master_node.self.id;
+    if (dest == master_node.self.id) {
+        return;
+    }
 
-    // Parse the path
+    memset(forwarding_table[dest][src], NONE, sizeof(forwarding_table[dest][src]));
+    forwarding_table[dest][src][0] = master_node.self.id;
+
     char *token = strtok(path, "-");
-    while (token != NULL) {
-        int id = atoi(token);
-        new_route[new_size++] = id;
-
+    for (i = 1; token != NULL; i++) {
+        forwarding_table[dest][src][i] = atoi(token);
         token = strtok(NULL, "-");
     }
+    forwarding_table[dest][src][i] = NONE;
 
-    if (new_size < current_size && new_size != 1) {
-        memcpy(shortest_path_table[dest], new_route, sizeof(new_route));
-    }
+    // update_shortest_paths();
 }
