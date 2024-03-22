@@ -310,6 +310,18 @@ void process_node_msg(Node *sender, char *msg) {
         master_node.second_next = next_backup;
     } else if (strcmp(args[0], "ROUTE") == 0) {
         update_forwarding_table(atoi(args[2]), atoi(args[1]), args[3]);
+    } else if (strcmp(args[0], "CHAT") == 0) {
+        int src = atoi(args[1]);
+        int dest = atoi(args[2]);
+        char *msg = args[3];
+
+        if (dest == master_node.self.id) {
+            printf("\nMessage from %d recived: %s\n", src, msg);
+        } else {
+            char new_msg[STR_SIZE] = {0};
+            sprintf(new_msg, "CHAT %02d %02d %s", src, dest, msg);
+            tcp_send_msg(&master_node.next.tcp, new_msg);
+        }
     }
 
     if (msg2 != NULL) process_node_msg(sender, msg2);  //  next message

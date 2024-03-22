@@ -244,6 +244,12 @@ void cmd_leave() {
     fd_add(STDIN_FILENO);
 }
 
+void cmd_send_msg(int dest, char *msg) {
+    char new_msg[STR_SIZE] = {0};
+    sprintf(new_msg, "CHAT %02d %02d %s", master_node.self.id, dest, msg);
+    tcp_send_msg(&master_node.next.tcp, new_msg);
+}
+
 void process_command(int n_args, char args[5][256]) {
     if (strcmp(args[0], "j") == 0 && n_args == 3) {
         cmd_join(atoi(args[1]), atoi(args[2]));
@@ -276,6 +282,7 @@ void process_command(int n_args, char args[5][256]) {
         cmd_show_path(atoi(args[1]));
     } else if (strcmp(args[0], "sf") == 0 && n_args == 1) {
     } else if (strcmp(args[0], "m") == 0 && n_args == 3) {
+        cmd_send_msg(atoi(args[1]), args[2]);
     } else if (strcmp(args[0], "l") == 0 && n_args == 1) {
         cmd_leave();
     } else if (strcmp(args[0], "x") == 0 && n_args == 1) {
