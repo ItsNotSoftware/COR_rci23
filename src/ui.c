@@ -85,6 +85,24 @@ void cmd_join(int ring, int id) {
     }
 }
 
+void cmd_direct_join(int id, int succ_id, char *succ_ip, char *succ_tcp) {
+    CHECK_BOUNDS(id, 0, 99);
+    CHECK_BOUNDS(succ_id, 0, 99);
+
+    master_node.self.id = id;
+
+    master_node.prev = master_node.self;
+    master_node.next = master_node.self;
+    master_node.second_next = master_node.self;
+
+    master_node.prev.tcp.active = false;
+    master_node.next.tcp.active = false;
+    master_node.second_next.tcp.active = false;
+
+    tables_init();
+    connect_to_node(succ_id, succ_ip, succ_tcp, true);
+}
+
 void cmd_show_topology() {
     printf(
         "\n------------------ST----------------------\n"
@@ -191,11 +209,47 @@ void cmd_show_path(int dest) {
     printf("\n\n");
 }
 
+void cmd_leave() {
+    server_disconnect(&server);
+
+    if (master_node.next.id != master_node.self.id) {
+        DEBUG("Closing next");
+        close(master_node.next.tcp.fd);
+        fd_remove(master_node.next.tcp.fd);
+    }
+
+    if (master_node.prev.id != master_node.self.id) {
+        DEBUG("Closing prev");
+        close(master_node.prev.tcp.fd);
+        fd_remove(master_node.prev.tcp.fd);
+    }
+
+    if (master_node.owned_chord.id != -1) {
+        close(master_node.owned_chord.tcp.fd);
+        fd_remove(master_node.owned_chord.tcp.fd);
+    }
+
+    for (int i = 0; i < n_chords; i++) {
+        close(master_node.chords[i].tcp.fd);
+        fd_remove(master_node.chords[i].tcp.fd);
+    }
+
+    master_node.next = master_node.self;
+    master_node.prev = master_node.self;
+    master_node.second_next = master_node.self;
+
+    master_node.owned_chord.id = -1;
+    server = server_connect();
+    fd_handler_init();
+    fd_add(STDIN_FILENO);
+}
+
 void process_command(int n_args, char args[5][256]) {
     if (strcmp(args[0], "j") == 0 && n_args == 3) {
         cmd_join(atoi(args[1]), atoi(args[2]));
 
     } else if (strcmp(args[0], "dj") == 0 && n_args == 5) {
+        cmd_direct_join(atoi(args[1]), atoi(args[2]), args[3], args[4]);
     } else if (strcmp(args[0], "c") == 0 && n_args == 1) {
         if (master_node.owned_chord.id != -1) {
             printf("Already have a chord\n");
@@ -223,39 +277,7 @@ void process_command(int n_args, char args[5][256]) {
     } else if (strcmp(args[0], "sf") == 0 && n_args == 1) {
     } else if (strcmp(args[0], "m") == 0 && n_args == 3) {
     } else if (strcmp(args[0], "l") == 0 && n_args == 1) {
-        server_disconnect(&server);
-
-        if (master_node.next.id != master_node.self.id) {
-            DEBUG("Closing next");
-            close(master_node.next.tcp.fd);
-            fd_remove(master_node.next.tcp.fd);
-        }
-
-        if (master_node.prev.id != master_node.self.id) {
-            DEBUG("Closing prev");
-            close(master_node.prev.tcp.fd);
-            fd_remove(master_node.prev.tcp.fd);
-        }
-
-        if (master_node.owned_chord.id != -1) {
-            close(master_node.owned_chord.tcp.fd);
-            fd_remove(master_node.owned_chord.tcp.fd);
-        }
-
-        for (int i = 0; i < n_chords; i++) {
-            close(master_node.chords[i].tcp.fd);
-            fd_remove(master_node.chords[i].tcp.fd);
-        }
-
-        master_node.next = master_node.self;
-        master_node.prev = master_node.self;
-        master_node.second_next = master_node.self;
-
-        master_node.owned_chord.id = -1;
-        server = server_connect();
-        fd_handler_init();
-        fd_add(STDIN_FILENO);
-
+        cmd_leave();
     } else if (strcmp(args[0], "x") == 0 && n_args == 1) {
         server_disconnect(&server);
         exit(0);
