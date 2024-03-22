@@ -145,8 +145,8 @@ void create_chord(int id, char *ip, char *port) {
     sprintf(msg, "CHORD %02d", master_node.self.id);
     tcp_send_msg(&chord->tcp, msg);
 
-    forwarding_table_add_direct_conn(chord->id, chord->id);
-    send_shortest_path_table(chord);
+    // forwarding_table_add_direct_conn(chord->id, chord->id);
+    // send_shortest_path_table(chord);
 }
 
 void connect_to_node(int id, char *ip, char *port, bool is_join) {
@@ -188,11 +188,12 @@ void connect_to_node(int id, char *ip, char *port, bool is_join) {
         tcp_send_msg(&prev->tcp, msg);
     }
 
-    forwarding_table_add_direct_conn(next->id, next->id);  //*
-    send_shortest_path_table(next);
+    // forwarding_table_add_direct_conn(next->id, next->id);  //*
+    // send_shortest_path_table(next);
 }
 
 void recieve_node() {
+    DEBUG("ENTERING");
     char msg[STR_SIZE] = {0};
     char args[5][STR_SIZE] = {0};
 
@@ -203,6 +204,13 @@ void recieve_node() {
 
     tcp_connection_accept(&new_conn);
     tcp_receive_msg(&new_conn, msg);
+
+    char *divider = strchr(msg, '\n');
+
+    if (divider != NULL) {
+        *divider = '\0';
+    }
+
     string_to_args(msg, args);
 
     if (strcmp(args[0], "ENTRY") == 0) {
@@ -256,6 +264,10 @@ void recieve_node() {
         chord_push(n);
     }
 
+    if (divider != NULL) {
+        process_node_msg(prev, divider + 1);
+    }
+
     // forwarding_table_add_direct_conn(prev->id, prev->id);
     // send_shortest_path_table(prev);
 }
@@ -297,7 +309,7 @@ void process_node_msg(Node *sender, char *msg) {
         connect_to_node(atoi(args[1]), args[2], args[3], false);
         master_node.second_next = next_backup;
     } else if (strcmp(args[0], "ROUTE") == 0) {
-        // update_forwarding_table(atoi(args[2]), atoi(args[1]), args[3]);
+        update_forwarding_table(atoi(args[2]), atoi(args[1]), args[3]);
     }
 
     if (msg2 != NULL) process_node_msg(sender, msg2);  //  next message

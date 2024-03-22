@@ -115,6 +115,8 @@ int main(int argc, char **argv) {
                                 continue;
                             }
 
+                            *node = master_node.self;
+
                             connect_to_node(master_node.second_next.id, master_node.second_next.ip,
                                             master_node.second_next.port, false);
 

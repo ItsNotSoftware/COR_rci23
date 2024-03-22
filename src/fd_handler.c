@@ -1,9 +1,13 @@
 #include "fd_handler.h"
 
-FdHandler fd_handler = {0};
+FdHandler fd_handler;
 extern int tcp_server_fd;
 
-void fd_handler_init() { FD_ZERO(&fd_handler.current_sockets); }
+void fd_handler_init() {
+    FdHandler new = {0};
+    fd_handler = new;
+    FD_ZERO(&fd_handler.current_sockets);
+}
 
 void fd_restore() { fd_handler.ready_sockets = fd_handler.current_sockets; }
 
